@@ -1,5 +1,15 @@
 import yfinance as yf
 import pandas as pd
+import os
+
+# Define sectors and stock tickers
+portfolio = {
+    "Technology": ["AAPL", "MSFT", "NVDA", "CRWD", "PANW"],
+    "Consumer_Cyclical": ["TSLA", "HD", "MCD", "DPZ", "RCL"],
+    "Healthcare": ["JNJ", "PFE", "UNH", "DXCM", "ZBH"],
+    "Energy": ["XOM", "CVX", "COP", "ENPH", "FSLR"],
+    "Financials": ["JPM", "BAC", "WFC", "SCHW", "GS"]
+}
 
 def fetch_stock_data(ticker, start="2000-01-01", end="2024-12-31", interval="1d"):
     """
@@ -16,13 +26,27 @@ def fetch_stock_data(ticker, start="2000-01-01", end="2024-12-31", interval="1d"
     """
     try:
         stock = yf.download(ticker, start=start, end=end, interval=interval)
-        stock.dropna(inplace=True)  # Remove missing values
-        stock.reset_index(inplace=True)  # Ensure 'Date' is a column
+        stock.dropna(inplace=True)  
+        stock.reset_index(inplace=True)  
         return stock
     except Exception as e:
         print(f"Error fetching data for {ticker}: {e}")
         return None
 
 if __name__ == "__main__":
-    df = fetch_stock_data("AMZN", start = "2025-2-1", end="2025-2-27")
-    print(df.tail())  # Preview data
+    base_folder = "stock_data"  
+    os.makedirs(base_folder, exist_ok=True)
+
+    for sector, tickers in portfolio.items():
+        sector_folder = os.path.join(base_folder, sector)
+        os.makedirs(sector_folder, exist_ok=True)  
+
+        print(f"\nFetching data for {sector} sector...")
+        for ticker in tickers:
+            stock_df = fetch_stock_data(ticker, start="2000-01-01", end="2024-12-31")
+            if stock_df is not None:
+                file_path = os.path.join(sector_folder, f"{ticker}.csv")
+                stock_df.to_csv(file_path, index=False)
+                print(f"✔ {ticker} data saved to {file_path} ({len(stock_df)} rows).")
+
+    print("\n✅ All stock data has been successfully saved to CSV files.")
